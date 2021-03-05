@@ -62,13 +62,26 @@ sudo mv /tmp/eksctl /usr/local/bin
 # Install helm
 curl -sSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
-#Set AWS LB Controller version
+# Set AWS LB Controller version
 echo 'export LBC_VERSION="v2.0.0"' >>  ~/.bash_profile
 .  ~/.bash_profile
 
-#Update kube config 
-export AWS_REGION=$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
-aws eks update-kubeconfig --name EKS-Lab
+acctid=$(aws sts get-caller-identity --output text --query Account) 
+echo "export ACCOUNT_ID=${acctid}" >> ~/.bash_profile
+region=$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
+echo "export AWS_REGION=${region}" >> ~/.bash_profile
+
+# Populate aws config region
+cat << EOF > ~/.aws/config
+[default]
+region = us-east-2
+output = json
+EOF
+
+# Update kube config 
+#AWS_REGION=$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
+EKS_CLUSTER_NAME=$(aws eks list-clusters --query "clusters" --output text) 
+aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
 
 # Download lab repository
 cd ~/environment
